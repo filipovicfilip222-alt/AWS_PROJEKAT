@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Type scale</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:18px 22px; background: hsl(var(--background)); color: hsl(var(--foreground)); font-family: var(--font-sans); }
+  .row { display:grid; grid-template-columns: 100px 1fr 80px; gap:14px; align-items:baseline; padding:6px 0; border-top:1px solid hsl(var(--border) / .6); }
+  .row:first-child { border-top:0; }
+  .lbl { font-family: var(--font-mono); font-size:10px; color: hsl(var(--muted-foreground)); }
+  .px { font-family: var(--font-mono); font-size:10px; color: hsl(var(--muted-foreground)); text-align:right; }
+  h1,h2,h3,h4 { margin:0; }
+</style></head><body>
+<div class="row"><div class="lbl">h1</div><h1>Pretraga termina</h1><div class="px">36–48px</div></div>
+<div class="row"><div class="lbl">h2</div><h2>Sledeća konsultacija</h2><div class="px">24–36px</div></div>
+<div class="row"><div class="lbl">h3</div><h3>Brze akcije</h3><div class="px">24px</div></div>
+<div class="row"><div class="lbl">h4</div><h4>Predmet i datum</h4><div class="px">18px</div></div>
+<div class="row"><div class="lbl">.lead</div><div class="lead">Pretraži objavljene konsultacije po predmetu i datumu, izaberi slobodan slot.</div><div class="px">17px</div></div>
+<div class="row"><div class="lbl">p / .body</div><p>Sistem sa AI tutorom koji ti pomaže pre i posle konsultacija. Profesor objavljuje termine, ti rezervišeš slot.</p><div class="px">15px</div></div>
+<div class="row"><div class="lbl">.body-xs</div><div class="body-xs">Filip Petrović · 2026-05-14 · 09:00–10:30</div><div class="px">13px</div></div>
+<div class="row"><div class="lbl">.eyebrow</div><div class="eyebrow">Sledeća konsultacija</div><div class="px">11px</div></div>
+</body></html>

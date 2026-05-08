@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Type families</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:18px 22px; background: hsl(var(--background)); color: hsl(var(--foreground)); }
+  .row { display:grid; grid-template-columns: 110px 1fr; gap:14px; padding:10px 0; border-top:1px solid hsl(var(--border) / .6); align-items:baseline; }
+  .row:first-child { border-top:0; }
+  .lbl { font-family: var(--font-mono); font-size:10px; color: hsl(var(--muted-foreground)); line-height:1.4; }
+  .specimen { font-size:24px; line-height:1.2; }
+  .sans { font-family: var(--font-sans); }
+  .serif { font-family: var(--font-serif); font-variation-settings: "opsz" 96, "SOFT" 30; }
+  .mono { font-family: var(--font-mono); font-size:14px; }
+  .meta { font-size:11px; color: hsl(var(--muted-foreground)); margin-top:2px; }
+</style></head><body>
+<div class="row">
+  <div class="lbl">Sans<br>Geist<br>cv01, cv11</div>
+  <div>
+    <div class="specimen sans">The quick brown fox · agQ 0123</div>
+    <div class="meta sans">UI · body · buttons · forms · meta rows</div>
+  </div>
+</div>
+<div class="row">
+  <div class="lbl">Serif<br>Fraunces<br>variable</div>
+  <div>
+    <div class="specimen serif">The quick brown fox · agQ 0123</div>
+    <div class="meta sans">Display · headlines · feature names</div>
+  </div>
+</div>
+<div class="row">
+  <div class="lbl">Mono<br>JetBrains Mono<br>fallback</div>
+  <div>
+    <div class="specimen mono">const slot = "09:00–09:15"</div>
+    <div class="meta sans">Tokens · code · timestamps</div>
+  </div>
+</div>
+</body></html>

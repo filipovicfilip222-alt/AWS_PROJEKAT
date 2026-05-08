@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>AI bubbles</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:18px 22px; background: hsl(var(--background)); font-family: var(--font-sans); color: hsl(var(--foreground)); display:flex; flex-direction:column; gap:14px; }
+  .stack { display:flex; flex-direction:column; gap:8px; max-width: 560px; }
+  .stack.right { align-items: flex-end; }
+  .who { display:inline-flex; align-items:center; gap:6px; font-size:11px; color: hsl(var(--muted-foreground)); padding:0 4px; }
+  .who svg { width:12px; height:12px; color: hsl(var(--accent)); }
+  .bubble { max-width: 85%; padding:12px 16px; border-radius: 16px; border:1px solid; font-size:14px; line-height:1.55; }
+  .ai   { background: hsl(var(--ai-bubble-bg)); color: hsl(var(--ai-bubble-fg)); border-color: hsl(var(--ai-bubble-border)); border-top-left-radius: 4px; }
+  .user { background: hsl(var(--user-bubble-bg)); color: hsl(var(--user-bubble-fg)); border-color: hsl(var(--user-bubble-border)); border-top-right-radius: 4px; }
+  .badge { display:inline-flex; align-items:center; gap:4px; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:500; border:1px solid; }
+  .b-success { background: hsl(var(--success) / .1); color: hsl(var(--success)); border-color: hsl(var(--success) / .25); }
+</style></head><body>
+<div class="stack right">
+  <div class="bubble user">Možeš li mi objasniti kako tačno radi rekurzivni poziv kod binary searcha?</div>
+</div>
+<div class="stack">
+  <div class="who"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>AI Tutor</div>
+  <div class="bubble ai">Ideja je da svaki rekurzivni poziv prepolovi opseg pretrage. Kada je niz sortiran, gledaš srednji element — ako je traženi veći, ideš desno; ako je manji, levo. Stack se gradi do log<sub>2</sub>(n) dubine.</div>
+  <span class="badge b-success">Visoka pouzdanost</span>
+</div>
+</body></html>

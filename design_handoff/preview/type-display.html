@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Type display</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:18px 22px; background: hsl(var(--background)); font-family: var(--font-sans); color: hsl(var(--foreground)); }
+  .row { display:grid; grid-template-columns: 90px 1fr; gap:18px; align-items:baseline; padding:10px 0; border-top:1px solid hsl(var(--border) / .6); }
+  .row:first-child { border-top:0; }
+  .lbl { font-family: var(--font-mono); font-size:10px; color: hsl(var(--muted-foreground)); padding-top:4px; }
+  .h-display { font-family: var(--font-display); font-size:48px; font-weight:500; letter-spacing:-0.02em; line-height:1.05; font-variation-settings: "opsz" 144, "SOFT" 50, "WONK" 0; }
+  .h-soft    { font-family: var(--font-display); font-size:30px; font-weight:500; letter-spacing:-0.008em; font-variation-settings: "opsz" 96, "SOFT" 30, "WONK" 0; }
+  .h-italic  { font-family: var(--font-display); font-style:italic; font-size:32px; letter-spacing:-0.005em; font-variation-settings: "opsz" 96, "SOFT" 30, "WONK" 0; }
+</style></head><body>
+<div class="row"><div class="lbl">.font-display<br>opsz 144</div><div class="h-display">Zakaži konsultacije.</div></div>
+<div class="row"><div class="lbl">.font-display-soft<br>opsz 96</div><div class="h-soft">Sledeća konsultacija</div></div>
+<div class="row"><div class="lbl">.font-display-italic<br>italic 96</div><div class="h-italic">&ldquo;PitajPreZakazivanja&rdquo;</div></div>
+</body></html>

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Brand colors</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:18px 22px; background: hsl(var(--background)); font-family: var(--font-sans); }
+  .grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:14px; }
+  .sw { display:flex; flex-direction:column; gap:6px; }
+  .chip { height:64px; border-radius:12px; border:1px solid hsl(var(--border)); position:relative; overflow:hidden; }
+  .chip.fg { background: hsl(var(--foreground)); }
+  .chip.bg { background: hsl(var(--background)); }
+  .chip.card { background: hsl(var(--card)); }
+  .chip.primary { background: hsl(var(--primary)); }
+  .chip.accent { background: hsl(var(--accent)); }
+  .chip.accent-muted { background: hsl(var(--accent-muted)); }
+  .chip.ring { background: hsl(var(--ring)); }
+  .chip.muted { background: hsl(var(--muted)); }
+  .nm { font-size:11px; font-weight:600; color: hsl(var(--foreground)); }
+  .vl { font-family: var(--font-mono); font-size:10px; color: hsl(var(--muted-foreground)); line-height:1.3; }
+</style></head><body>
+<div class="grid">
+  <div class="sw"><div class="chip bg"></div><div class="nm">background</div><div class="vl">37 45% 94%</div></div>
+  <div class="sw"><div class="chip card"></div><div class="nm">card</div><div class="vl">40 100% 98%</div></div>
+  <div class="sw"><div class="chip muted"></div><div class="nm">muted</div><div class="vl">36 38% 90%</div></div>
+  <div class="sw"><div class="chip fg"></div><div class="nm">foreground</div><div class="vl">215 28% 17%</div></div>
+  <div class="sw"><div class="chip primary"></div><div class="nm">primary</div><div class="vl">217 91% 60%</div></div>
+  <div class="sw"><div class="chip ring"></div><div class="nm">ring</div><div class="vl">243 75% 58%</div></div>
+  <div class="sw"><div class="chip accent"></div><div class="nm">accent</div><div class="vl">262 90% 66%</div></div>
+  <div class="sw"><div class="chip accent-muted"></div><div class="nm">accent-muted</div><div class="vl">252 100% 97%</div></div>
+</div>
+</body></html>

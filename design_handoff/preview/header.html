@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Header / nav</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:18px 22px; background: hsl(var(--background)); font-family: var(--font-sans); color: hsl(var(--foreground)); }
+  .bar { background: hsl(var(--background) / .85); backdrop-filter: blur(8px); border:1px solid hsl(var(--border) / .7); border-radius:12px; padding: 10px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .left { display:flex; align-items:center; gap:14px; }
+  .lockup { display:inline-flex; align-items:center; gap:8px; font-weight:600; font-size:14px; letter-spacing:-0.005em; }
+  .badge { width:32px; height:32px; border-radius:8px; background: hsl(var(--foreground)); color: hsl(var(--background)); display:inline-flex; align-items:center; justify-content:center; }
+  .badge svg { width:14px; height:14px; }
+  nav { display:flex; align-items:center; gap:4px; }
+  .lnk { padding:6px 12px; border-radius:8px; font-size:13px; font-weight:500; color: hsl(var(--muted-foreground)); cursor:pointer; }
+  .lnk:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+  .lnk.active { background: hsl(var(--foreground)); color: hsl(var(--background)); }
+  .lnk.feat { color: hsl(var(--accent)); font-family: var(--font-display); font-style:italic; font-size:14px; font-variation-settings:"opsz" 24, "SOFT" 0; }
+  .lnk.feat:hover { background: hsl(var(--accent-muted)); }
+  .lnk.feat.active { background: hsl(var(--accent)); color: hsl(var(--accent-foreground)); }
+  .right { display:flex; align-items:center; gap:8px; }
+  .chip { display:inline-flex; align-items:center; gap:10px; padding:6px 12px 6px 6px; background: hsl(var(--background)); border:1px solid hsl(var(--border)); border-radius:999px; }
+  .av { width:32px; height:32px; border-radius:8px; background: hsl(var(--accent) / .15); color: hsl(var(--accent)); font-size:11px; font-weight:600; display:inline-flex; align-items:center; justify-content:center; flex: none; }
+  .name { font-size:12px; font-weight:500; line-height:1.2; color: hsl(var(--foreground)); }
+  .role { font-size:10px; text-transform:uppercase; letter-spacing:.05em; color: hsl(var(--muted-foreground)); margin-top: 2px; }
+</style></head><body>
+<div class="bar">
+  <div class="left">
+    <div class="lockup"><span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6"/><path d="M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></span>PredZnanje</div>
+    <nav>
+      <span class="lnk active">Početna</span>
+      <span class="lnk">Termini</span>
+      <span class="lnk feat">&ldquo;PitajPreZakazivanja&rdquo;</span>
+      <span class="lnk">Moje rezervacije</span>
+    </nav>
+  </div>
+  <div class="right">
+    <div class="chip">
+      <span class="av">FP</span>
+      <div><div class="name">Filip Petrović</div><div class="role">Student</div></div>
+    </div>
+  </div>
+</div>
+</body></html>

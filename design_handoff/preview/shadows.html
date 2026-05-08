@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Shadows</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:24px 22px; background: hsl(var(--background)); font-family: var(--font-sans); color: hsl(var(--foreground)); }
+  .row { display:grid; grid-template-columns: repeat(3, 1fr); gap:24px; }
+  .b { background: hsl(var(--card)); border:1px solid hsl(var(--border)); border-radius:12px; height:88px; }
+  .b1 { box-shadow: var(--shadow-card); }
+  .b2 { box-shadow: var(--shadow-card-hover); }
+  .b3 { box-shadow: var(--shadow-elevated); }
+  .lbl { font-size:11px; font-weight:600; margin-top:10px; }
+  .vl { font-family: var(--font-mono); font-size:10px; color: hsl(var(--muted-foreground)); }
+</style></head><body>
+<div class="row">
+  <div><div class="b b1"></div><div class="lbl">shadow-card</div><div class="vl">resting · cards, list items</div></div>
+  <div><div class="b b2"></div><div class="lbl">shadow-card-hover</div><div class="vl">hover · pairs with -translate-y-0.5</div></div>
+  <div><div class="b b3"></div><div class="lbl">shadow-elevated</div><div class="vl">hero blocks · "Sledeća konsultacija"</div></div>
+</div>
+</body></html>

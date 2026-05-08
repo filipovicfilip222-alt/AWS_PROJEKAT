@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="40" viewBox="0 0 180 40" fill="none">
+  <rect x="0" y="2" width="36" height="36" rx="8" fill="hsl(215 28% 17%)"></rect>
+  <g transform="translate(8 8)" stroke="hsl(40 100% 98%)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    
+    <path d="M22 10v6"></path>
+    <path d="M2 10l10-5 10 5-10 5z"></path>
+    <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+  </g>
+  <text x="44" y="26" font-family="Fraunces, Georgia, serif" font-weight="500" font-size="18" fill="hsl(215 28% 17%)" letter-spacing="-0.01em">PredZnanje</text>
+</svg>

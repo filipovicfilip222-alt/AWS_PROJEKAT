@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Semantic colors</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:18px 22px; background: hsl(var(--background)); font-family: var(--font-sans); }
+  .grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:14px; }
+  .sw { display:flex; flex-direction:column; gap:6px; }
+  .chip { height:64px; border-radius:12px; border:1px solid hsl(var(--border)); display:flex; align-items:flex-end; padding:8px; gap:6px; }
+  .chip .tint { width:24px; height:24px; border-radius:6px; }
+  .chip .full { width:24px; height:24px; border-radius:6px; }
+  .nm { font-size:11px; font-weight:600; color: hsl(var(--foreground)); }
+  .vl { font-family: var(--font-mono); font-size:10px; color: hsl(var(--muted-foreground)); }
+
+  .chip.success { background: hsl(var(--success) / .1); border-color: hsl(var(--success) / .25); }
+  .chip.success .full { background: hsl(var(--success)); }
+  .chip.warning { background: hsl(var(--warning) / .1); border-color: hsl(var(--warning) / .25); }
+  .chip.warning .full { background: hsl(var(--warning)); }
+  .chip.info    { background: hsl(var(--info) / .1); border-color: hsl(var(--info) / .25); }
+  .chip.info .full    { background: hsl(var(--info)); }
+  .chip.danger  { background: hsl(var(--destructive) / .1); border-color: hsl(var(--destructive) / .25); }
+  .chip.danger .full  { background: hsl(var(--destructive)); }
+</style></head><body>
+<div class="grid">
+  <div class="sw"><div class="chip success"><div class="full"></div></div><div class="nm">success</div><div class="vl">142 76% 36%</div></div>
+  <div class="sw"><div class="chip warning"><div class="full"></div></div><div class="nm">warning</div><div class="vl">32 95% 44%</div></div>
+  <div class="sw"><div class="chip info"><div class="full"></div></div><div class="nm">info</div><div class="vl">199 98% 40%</div></div>
+  <div class="sw"><div class="chip danger"><div class="full"></div></div><div class="nm">destructive</div><div class="vl">0 84% 51%</div></div>
+</div>
+<div style="margin-top:14px; font-size:11px; color: hsl(var(--muted-foreground));">Each semantic role pairs a 10% tint background, a 20% border, and the full color for badges and inline tags.</div>
+</body></html>

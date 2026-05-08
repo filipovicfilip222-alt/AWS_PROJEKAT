@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Preview Card</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html, body { margin: 0; padding: 0; background: hsl(var(--background)); }
+  body { padding: 18px 22px; box-sizing: border-box; }
+  .stack { display: flex; flex-direction: column; gap: 12px; }
+  .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .grid { display: grid; gap: 10px; }
+  .swatch { display: flex; flex-direction: column; gap: 6px; }
+  .swatch .chip { height: 56px; border-radius: 10px; border: 1px solid hsl(var(--border)); }
+  .swatch .nm { font-size: 11px; font-weight: 600; color: hsl(var(--foreground)); }
+  .swatch .vl { font-family: var(--font-mono); font-size: 10px; color: hsl(var(--muted-foreground)); }
+  .lbl { font-family: var(--font-sans); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: hsl(var(--muted-foreground)); }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 500; border: 1px solid; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 8px; font-size: 13px; font-weight: 500; font-family: var(--font-sans); border: 1px solid transparent; cursor: pointer; }
+  .card { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 12px; box-shadow: var(--shadow-card); }
+</style>
+</head>
+<body></body>
+</html>

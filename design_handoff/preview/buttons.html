@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Buttons</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:18px 22px; background: hsl(var(--background)); font-family: var(--font-sans); color: hsl(var(--foreground)); }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:10px; }
+  button { font-family: var(--font-sans); font-weight:500; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; border:1px solid transparent; transition:all .15s; }
+  button:active { transform: scale(0.98); }
+  .b-default { height:40px; padding:0 16px; border-radius:8px; font-size:14px; background:hsl(var(--primary)); color:hsl(var(--primary-foreground)); box-shadow: var(--shadow-card); }
+  .b-default:hover { background: hsl(var(--primary) / .9); }
+  .b-accent { height:40px; padding:0 16px; border-radius:8px; font-size:14px; background:hsl(var(--accent)); color:hsl(var(--accent-foreground)); box-shadow: var(--shadow-card); }
+  .b-outline { height:40px; padding:0 16px; border-radius:8px; font-size:14px; background:hsl(var(--card)); border-color: hsl(var(--border)); color: hsl(var(--foreground)); }
+  .b-outline:hover { background: hsl(var(--muted)); }
+  .b-secondary { height:40px; padding:0 16px; border-radius:8px; font-size:14px; background:hsl(var(--secondary)); color:hsl(var(--secondary-foreground)); }
+  .b-ghost { height:40px; padding:0 16px; border-radius:8px; font-size:14px; background:transparent; color:hsl(var(--foreground)); }
+  .b-ghost:hover { background: hsl(var(--muted)); }
+  .b-destructive { height:40px; padding:0 16px; border-radius:8px; font-size:14px; background:hsl(var(--destructive)); color:hsl(var(--destructive-foreground)); }
+  .b-link { background:transparent; color: hsl(var(--primary)); padding:0; height:auto; }
+  .b-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .b-sm { height:36px; padding:0 12px; border-radius:8px; font-size:13px; }
+  .b-xs { height:32px; padding:0 10px; border-radius:8px; font-size:12px; }
+  .b-lg { height:44px; padding:0 24px; border-radius:8px; font-size:15px; }
+  .b-icon { width:40px; height:40px; padding:0; border-radius:8px; }
+  .ico { width:14px; height:14px; }
+  .lbl { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color: hsl(var(--muted-foreground)); margin:6px 0 4px; }
+</style></head><body>
+<div class="lbl">Variants</div>
+<div class="row">
+  <button class="b-default">Prijavi se</button>
+  <button class="b-accent"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>Pitaj AI</button>
+  <button class="b-outline">Otvori termin</button>
+  <button class="b-secondary">Resetuj filtere</button>
+  <button class="b-ghost">Sve rezervacije</button>
+  <button class="b-destructive">Obriši</button>
+  <button class="b-link">Više detalja</button>
+</div>
+<div class="lbl">Sizes</div>
+<div class="row">
+  <button class="b-default b-xs">xs</button>
+  <button class="b-default b-sm">sm</button>
+  <button class="b-default">default</button>
+  <button class="b-default b-lg">large</button>
+  <button class="b-outline b-icon"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+</div>
+</body></html>

@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Radii</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:18px 22px; background: hsl(var(--background)); font-family: var(--font-sans); color: hsl(var(--foreground)); }
+  .row { display:grid; grid-template-columns: repeat(5, 1fr); gap:14px; }
+  .b { background: hsl(var(--card)); border:1px solid hsl(var(--border)); height:64px; }
+  .lbl { font-size:11px; font-weight:600; margin-top:8px; }
+  .vl { font-family: var(--font-mono); font-size:10px; color: hsl(var(--muted-foreground)); }
+</style></head><body>
+<div class="row">
+  <div><div class="b" style="border-radius: var(--radius-sm)"></div><div class="lbl">sm</div><div class="vl">4px</div></div>
+  <div><div class="b" style="border-radius: var(--radius-md)"></div><div class="lbl">md</div><div class="vl">8px · button</div></div>
+  <div><div class="b" style="border-radius: var(--radius-lg)"></div><div class="lbl">lg / base</div><div class="vl">12px</div></div>
+  <div><div class="b" style="border-radius: var(--radius-xl)"></div><div class="lbl">xl · card</div><div class="vl">16px</div></div>
+  <div><div class="b" style="border-radius: 999px"></div><div class="lbl">full · pill</div><div class="vl">badges</div></div>
+</div>
+</body></html>

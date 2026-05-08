@@ -1,0 +1,298 @@
+/* =============================================================
+   PredZnanje — Colors & Type
+   Source of truth: derived from frontend/src/styles/globals.css
+   and frontend/tailwind.config.ts.
+
+   - Color is expressed as raw HSL components so consumers can do
+       color: hsl(var(--primary) / 0.5)
+     with any alpha. This matches the Tailwind setup the app uses.
+   - Type is split into raw faces (Fraunces / Geist / JetBrains
+     Mono) and semantic styles (.h1 / .h2 / .body / .eyebrow / etc.)
+   ============================================================= */
+
+/* -----------------------------------------------------------------
+   Webfonts
+   Geist and Fraunces are loaded from Google Fonts CDN. JetBrains
+   Mono is bundled as fallback for code samples. See README's
+   "Typography substitution flag" — Geist on Google Fonts is missing
+   the cv01/cv11 character variants the codebase enables.
+   ----------------------------------------------------------------- */
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..700,0..100,0..1;1,9..144,300..700,0..100,0..1&family=Geist:wght@300..700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+:root {
+  /* ---- Color tokens (HSL components, comma-less for hsl()/hsla()) ---- */
+
+  /* Surface */
+  --background: 37 45% 94%;        /* warm beige page */
+  --foreground: 215 28% 17%;       /* near-black slate ink */
+  --card: 40 100% 98%;             /* warm near-white */
+  --card-foreground: 215 28% 17%;
+  --popover: 40 100% 98%;
+  --popover-foreground: 215 28% 17%;
+  --secondary: 36 38% 90%;         /* subtle beige fill */
+  --secondary-foreground: 215 28% 17%;
+  --muted: 36 38% 90%;
+  --muted-foreground: 220 9% 46%;
+  --border: 35 31% 84%;
+  --input: 35 31% 84%;
+
+  /* Brand */
+  --primary: 217 91% 60%;          /* action / link blue */
+  --primary-foreground: 210 40% 98%;
+  --ring: 243 75% 58%;             /* slightly violet focus ring */
+
+  /* AI accent */
+  --accent: 262 90% 66%;           /* violet, AI surface tint */
+  --accent-foreground: 0 0% 100%;
+  --accent-muted: 252 100% 97%;    /* very pale violet */
+
+  /* Semantic */
+  --destructive: 0 84% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 142 76% 36%;
+  --success-foreground: 0 0% 100%;
+  --warning: 32 95% 44%;
+  --warning-foreground: 0 0% 100%;
+  --info: 199 98% 40%;
+  --info-foreground: 0 0% 100%;
+
+  /* AI bubbles */
+  --ai-bubble-bg: 252 100% 97%;
+  --ai-bubble-fg: 215 28% 17%;
+  --ai-bubble-border: 252 80% 90%;
+  --user-bubble-bg: 40 100% 98%;
+  --user-bubble-fg: 215 28% 17%;
+  --user-bubble-border: 35 31% 84%;
+
+  /* ---- Foundations ---- */
+  --radius: 0.75rem;               /* 12px base; cards rounded-xl, buttons rounded-md */
+  --radius-sm: calc(var(--radius) - 8px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  /* Shadow scale */
+  --shadow-card:
+    0 1px 2px 0 hsl(220 13% 12% / 0.04),
+    0 1px 3px 0 hsl(220 13% 12% / 0.04);
+  --shadow-card-hover:
+    0 4px 14px -2px hsl(220 13% 12% / 0.08),
+    0 2px 6px -1px hsl(220 13% 12% / 0.05);
+  --shadow-elevated:
+    0 10px 30px -10px hsl(220 13% 12% / 0.18),
+    0 4px 12px -4px hsl(220 13% 12% / 0.08);
+
+  /* ---- Type faces ---- */
+  --font-sans:
+    "Geist", "Inter", system-ui, -apple-system, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-serif:
+    "Fraunces", "Source Serif Pro", Georgia, "Times New Roman", serif;
+  --font-display: var(--font-serif);
+  --font-mono:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  /* Easing */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* -----------------------------------------------------------------
+   Dark mode (defined but currently unused in production)
+   Apply by adding `class="dark"` to <html> or any ancestor.
+   ----------------------------------------------------------------- */
+.dark {
+  --background: 222 30% 9%;
+  --foreground: 36 38% 92%;
+  --card: 222 30% 12%;
+  --card-foreground: 36 38% 92%;
+  --popover: 222 30% 12%;
+  --popover-foreground: 36 38% 92%;
+  --secondary: 222 30% 18%;
+  --secondary-foreground: 36 38% 92%;
+  --muted: 222 30% 18%;
+  --muted-foreground: 220 9% 65%;
+  --border: 222 30% 22%;
+  --input: 222 30% 22%;
+  --primary: 217 91% 65%;
+  --primary-foreground: 222 30% 9%;
+  --ring: 243 75% 60%;
+  --accent: 262 70% 60%;
+  --accent-foreground: 0 0% 100%;
+  --accent-muted: 252 30% 18%;
+  --destructive: 0 75% 55%;
+  --success: 142 60% 45%;
+  --warning: 32 85% 55%;
+  --info: 199 80% 55%;
+  --ai-bubble-bg: 252 30% 18%;
+  --ai-bubble-border: 252 30% 30%;
+  --user-bubble-bg: 222 30% 12%;
+  --user-bubble-border: 222 30% 22%;
+}
+
+/* -----------------------------------------------------------------
+   Base
+   ----------------------------------------------------------------- */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+  font-feature-settings: "cv01", "cv11";
+  font-optical-sizing: auto;
+}
+
+/* -----------------------------------------------------------------
+   Headings — all Fraunces, regular-medium weight, slight neg track
+   Each level tunes optical-size and SOFT axis per the codebase.
+   ----------------------------------------------------------------- */
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-style: normal;
+  letter-spacing: -0.012em;
+  line-height: 1.15;
+  color: hsl(var(--foreground));
+  font-feature-settings: normal; /* prevent inherited cv01/cv11 swashes */
+  text-wrap: balance;
+}
+
+h1, .h1 {
+  font-size: clamp(2rem, 4vw, 3rem);     /* 32–48px */
+  font-variation-settings: "opsz" 144, "SOFT" 50, "WONK" 0;
+  letter-spacing: -0.02em;
+}
+h2, .h2 {
+  font-size: clamp(1.5rem, 3vw, 2.25rem); /* 24–36px */
+  font-variation-settings: "opsz" 96, "SOFT" 40, "WONK" 0;
+}
+h3, .h3 {
+  font-size: 1.5rem;                      /* 24px */
+  font-variation-settings: "opsz" 48, "SOFT" 30, "WONK" 0;
+}
+h4, .h4 {
+  font-size: 1.125rem;                    /* 18px */
+  font-variation-settings: "opsz" 24, "SOFT" 20, "WONK" 0;
+}
+h5, .h5 { font-size: 1rem; font-variation-settings: "opsz" 24, "SOFT" 20, "WONK" 0; }
+h6, .h6 { font-size: 0.875rem; font-variation-settings: "opsz" 24, "SOFT" 20, "WONK" 0; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* Display utilities — match globals.css */
+.font-display {
+  font-family: var(--font-display);
+  font-style: normal;
+  letter-spacing: -0.005em;
+  font-feature-settings: normal;
+  font-variation-settings: "opsz" 144, "SOFT" 50, "WONK" 0;
+}
+.font-display-soft {
+  font-family: var(--font-display);
+  font-style: normal;
+  letter-spacing: -0.008em;
+  font-feature-settings: normal;
+  font-variation-settings: "opsz" 96, "SOFT" 30, "WONK" 0;
+}
+.font-display-italic {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+  font-feature-settings: normal;
+  font-variation-settings: "opsz" 96, "SOFT" 30, "WONK" 0;
+}
+.font-display-italic-clean {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0;
+  font-feature-settings: normal;
+  font-variation-settings: "opsz" 24, "SOFT" 0, "WONK" 0;
+}
+
+/* -----------------------------------------------------------------
+   Semantic body styles
+   ----------------------------------------------------------------- */
+.body, p {
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;     /* 15px */
+  line-height: 1.6;
+  color: hsl(var(--foreground));
+}
+.body-sm, .text-sm-body { font-size: 0.875rem; line-height: 1.55; }
+.body-xs { font-size: 0.8125rem; line-height: 1.5; color: hsl(var(--muted-foreground)); }
+
+.lead {
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;    /* 17px */
+  line-height: 1.55;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Eyebrow — uppercase, wide tracking, micro */
+.eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;    /* 11px */
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Label / form */
+.label {
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: hsl(var(--foreground));
+}
+
+/* Code / mono */
+code, .code, kbd {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: hsl(var(--muted));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-sm);
+  padding: 0.1em 0.35em;
+}
+pre {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  background: hsl(var(--muted));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+/* Link */
+a, .link {
+  color: hsl(var(--primary));
+  text-underline-offset: 4px;
+}
+a:hover { text-decoration: underline; }
+
+/* Utility: text-balance helper */
+.text-balance { text-wrap: balance; }
+
+/* -----------------------------------------------------------------
+   Background textures
+   ----------------------------------------------------------------- */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, hsl(var(--border) / 0.4) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--border) / 0.4) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.bg-dots {
+  background-image: radial-gradient(hsl(var(--border)) 1px, transparent 1px);
+  background-size: 20px 20px;
+}

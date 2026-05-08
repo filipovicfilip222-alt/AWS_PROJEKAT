@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Spacing</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:18px 22px; background: hsl(var(--background)); font-family: var(--font-sans); color: hsl(var(--foreground)); }
+  .row { display:flex; align-items:center; gap:18px; padding:6px 0; }
+  .name { width:90px; font-family: var(--font-mono); font-size:11px; color: hsl(var(--muted-foreground)); }
+  .bar { background: hsl(var(--accent) / .35); height:14px; border-radius:3px; }
+  .vl { font-family: var(--font-mono); font-size:10px; color: hsl(var(--muted-foreground)); }
+</style></head><body>
+<div class="row"><div class="name">space-1</div><div class="bar" style="width:4px"></div><div class="vl">4px</div></div>
+<div class="row"><div class="name">space-2</div><div class="bar" style="width:8px"></div><div class="vl">8px · gap-2</div></div>
+<div class="row"><div class="name">space-3</div><div class="bar" style="width:12px"></div><div class="vl">12px · gap-3</div></div>
+<div class="row"><div class="name">space-4</div><div class="bar" style="width:16px"></div><div class="vl">16px</div></div>
+<div class="row"><div class="name">space-5</div><div class="bar" style="width:20px"></div><div class="vl">20px · card p-5</div></div>
+<div class="row"><div class="name">space-6</div><div class="bar" style="width:24px"></div><div class="vl">24px · card p-6, section gap</div></div>
+<div class="row"><div class="name">space-8</div><div class="bar" style="width:32px"></div><div class="vl">32px · hero p-8, section</div></div>
+</body></html>

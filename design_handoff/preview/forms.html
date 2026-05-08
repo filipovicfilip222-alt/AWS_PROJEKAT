@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Form fields</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:18px 22px; background: hsl(var(--background)); font-family: var(--font-sans); color: hsl(var(--foreground)); }
+  .grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+  .field { display:flex; flex-direction:column; gap:6px; }
+  .label { font-size:13px; font-weight:500; }
+  input, select, textarea {
+    font-family: var(--font-sans); font-size:14px;
+    height:40px; padding: 0 12px;
+    background: hsl(var(--card));
+    border:1px solid hsl(var(--input));
+    border-radius:8px; color: hsl(var(--foreground));
+    box-shadow: 0 1px 2px hsl(220 13% 12% / .04);
+    outline:none;
+  }
+  textarea { height:64px; padding:10px 12px; resize:none; }
+  input:focus, select:focus, textarea:focus {
+    border-color: hsl(var(--ring));
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+  }
+  ::placeholder { color: hsl(var(--muted-foreground)); }
+  .with-icon { position:relative; }
+  .with-icon svg { position:absolute; left:12px; top:50%; transform:translateY(-50%); width:16px; height:16px; color: hsl(var(--muted-foreground)); }
+  .with-icon input, .with-icon select { padding-left:36px; }
+</style></head><body>
+<div class="grid">
+  <div class="field">
+    <label class="label">Email</label>
+    <input type="email" placeholder="ime.prezime@fakultet.rs">
+  </div>
+  <div class="field">
+    <label class="label">Lozinka</label>
+    <input type="password" value="••••••••">
+  </div>
+  <div class="field">
+    <label class="label">Predmet</label>
+    <div class="with-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6"/><path d="M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+      <select><option>Algoritmi i strukture podataka</option></select>
+    </div>
+  </div>
+  <div class="field">
+    <label class="label">Datum</label>
+    <input type="date" value="2026-05-14">
+  </div>
+  <div class="field" style="grid-column: span 2">
+    <label class="label">Pitanje za AI tutora</label>
+    <textarea placeholder="Detaljno pitanje za AI tutora...">Kako zapravo radi rekurzija ako stack overflow nikad ne hvatamo eksplicitno?</textarea>
+  </div>
+</div>
+</body></html>
