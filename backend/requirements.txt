@@ -1,0 +1,6 @@
+# Top-level deps for local dev / unit tests.
+# Production deps for Lambda Layer su u backend/shared/requirements.txt.
+-r shared/requirements.txt
+pytest>=8.0
+pytest-mock>=3.12
+moto[dynamodb,s3]>=5.0

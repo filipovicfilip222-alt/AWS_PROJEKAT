@@ -1,0 +1,111 @@
+Deploy cheatsheet
+0. Pre svakog deploy-a — provera credentials
+# Ako je SSO sesija istekla (dobiješ "ExpiredToken"):
+aws sso login
+# Brza provera ko si:
+aws sts get-caller-identity
+1. Aktivacija venv-ova
+Postoje DVA venv-a, svaki za svoju ulogu:
+
+# Backend testovi + skripte (boto3, pytest, pydantic):
+source /home/filipfilipovic/Praksa_vezbe/AWS_PROJEKAT/backend/.venv/bin/activate
+# Infra (CDK Python):
+source /home/filipfilipovic/Praksa_vezbe/AWS_PROJEKAT/infra/.venv/bin/activate
+# Izlaz:
+deactivate
+CDK koristi infra venv. Backend testove i scripts/backfill_embeddings.py pokrećeš iz backend venv-a.
+
+2. Šta deploy-uješ posle koje vrste izmene
+Šta si dirao	Komanda
+Samo frontend (frontend/src/**)
+cd frontend && npm run build && cd ../infra && cdk deploy Konsultacije-Frontend-dev
+Lambda kod (backend/lambdas/**)
+cd infra && cdk deploy Konsultacije-Api-dev
+Shared layer (backend/shared/**)
+cd infra && cdk deploy Konsultacije-Api-dev (rebuilds layer + sve Lambde)
+DDB shema / GSI (infra/stacks/data_stack.py)
+cd infra && cdk deploy Konsultacije-Data-dev
+Auth (infra/stacks/auth_stack.py)
+cd infra && cdk deploy Konsultacije-Auth-dev
+Reports bucket (infra/stacks/reports_stack.py)
+cd infra && cdk deploy Konsultacije-Reports-dev
+Monitoring (infra/stacks/monitoring_stack.py)
+cd infra && cdk deploy Konsultacije-Monitoring-dev
+API ruta / IAM / nova Lambda
+cd infra && cdk deploy Konsultacije-Api-dev Konsultacije-Monitoring-dev
+Apsolutno sve odjednom
+./scripts/deploy.sh (build FE + cdk deploy --all)
+Imena stack-ova vidiš sa: cdk list (iz infra/).
+
+3. Standardni workflow nakon promene koda
+# 1. (uvek) — pregled šta će se promeniti
+cd infra
+source .venv/bin/activate
+cdk diff                                  # svi stack-ovi
+cdk diff Konsultacije-Api-dev             # samo jedan stack
+# 2. Deploy targeted
+cdk deploy Konsultacije-Api-dev --require-approval never
+# 3. (po potrebi) ako diraš kod backenda i hoćeš testove pre deploy-a:
+deactivate
+source ../backend/.venv/bin/activate
+pytest tests/unit
+4. Frontend specifično
+# Lokalni dev server (sa pravim API URL-om iz .env.local):
+cd frontend
+npm run dev                     # http://localhost:5173
+# Production build (ono što se uploaduje u S3):
+npm run build                   # → frontend/dist/
+# Type-check bez builda:
+npx tsc --noEmit -p .
+# Posle deploya — CloudFront je već invalidiran u FrontendStack-u,
+# ali ako otvaraš app i ne vidiš promenu: hard refresh (Ctrl+Shift+R)
+5. Backend testovi
+cd backend
+source .venv/bin/activate
+pytest tests/unit                          # svi
+pytest tests/unit/test_rrf.py -v           # jedan fajl
+pytest tests/unit -k "ratelimit"           # po imenu
+6. Skripte
+# Iz BACKEND venv-a (ima boto3 + pravu putanju za shared module):
+cd /home/filipfilipovic/Praksa_vezbe/AWS_PROJEKAT
+source backend/.venv/bin/activate
+# Backfill embeddings (V3) — uvek prvo dry-run:
+AWS_REGION=eu-central-1 TABLE_NAME=KonsultacijeTable \
+  python scripts/backfill_embeddings.py --dry-run
+AWS_REGION=eu-central-1 TABLE_NAME=KonsultacijeTable \
+  python scripts/backfill_embeddings.py
+# Seed test podataka (V1):
+AWS_REGION=eu-central-1 TABLE_NAME=KonsultacijeTable \
+  python scripts/seed-data.py
+7. Korisne CDK komande
+cd infra && source .venv/bin/activate
+cdk list                                   # imena stack-ova
+cdk synth Konsultacije-Api-dev > /dev/null # samo sintetizuj (validacija)
+cdk diff Konsultacije-Api-dev              # diff jedan stack
+cdk deploy --all --require-approval never  # full deploy bez prompta
+cdk deploy Konsultacije-Api-dev --hotswap  # BRŽE — samo Lambda kod swap
+                                           # (NE menja IAM / API GW config)
+cdk destroy Konsultacije-Monitoring-dev    # obriši stack
+./scripts/teardown.sh                      # obriši SVE (oprezno!)
+--hotswap flag je zlato za iteraciju kad samo menjaš Python kod Lambde — ne ide kroz CloudFormation, traje 5-10 sekundi umesto 1-2 minuta. Nemoj ga koristiti za promene IAM-a, env var-ova ili API rute.
+
+8. Logovi (debug)
+# Tail Lambda logova u realnom vremenu:
+aws logs tail /aws/lambda/Konsultacije-Api-dev-AiTutorAskFnD7F25A02-yH9oo35MgXQT --follow
+# Skrati ime preko grep-a iz list-functions:
+FN=$(aws lambda list-functions --region eu-central-1 \
+  --query "Functions[?contains(FunctionName, 'AiTutor')].FunctionName | [0]" --output text)
+aws logs tail /aws/lambda/$FN --follow --format short
+9. Kratki "fix → ship" loop primer
+Recimo izmeniš backend/lambdas/ai/ask.py:
+
+
+cd /home/filipfilipovic/Praksa_vezbe/AWS_PROJEKAT/backend
+source .venv/bin/activate
+pytest tests/unit              # da nisi ništa polomio
+cd ../infra
+source .venv/bin/activate      # zameni venv
+cdk deploy Konsultacije-Api-dev --hotswap
+~10 sekundi i tvoja izmena je live.
+
+Ako za nešto specifično nisi siguran (npr. dodaješ novu env varijablu, novu Lambdu, menjaš DDB GSI…), pitaj — različite stvari traže različite flagove.

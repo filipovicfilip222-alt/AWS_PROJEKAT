@@ -1,0 +1,730 @@
+kako bi se radila ova semanticka pretraga i koliko bi to sve kostalo, kad bi se pokretalo. svidja mi se ideja i za AI follow up chat
+
+1:56 PM
+Claude responded: Semantic search + AI follow-up chat — kompletna razrada
+Semantic search + AI follow-up chat — kompletna razrada
+🎯 Zašto ovo dvoje ide zajedno
+Oba feature-a dele istu infrastrukturu:
+
+Embedding model (Titan Embeddings) za pretvaranje teksta u vektor
+Vector storage (DynamoDB)
+Materijal kao kontekst (PDF tekst u S3)
+Ako implementiraš jedno, drugo je 80% besplatno.
+
+1. Semantic search — kako radi
+Šta je embedding (kratko)
+Embedding je niz brojeva (vektor) koji predstavlja "značenje" teksta. Tekstovi sa sličnim značenjem imaju slične vektore.
+
+Primer:
+
+"Kako radi rekurzija?" → [0.12, -0.45, 0.78, ...] (1024 broja)
+"Objasnite rekurzivni poziv" → [0.15, -0.42, 0.81, ...] (slične brojke)
+"Šta je SQL?" → [-0.65, 0.23, -0.11, ...] (potpuno drugačije)
+Cosine similarity meri "ugao" između vektora — vrednost između -1 i 1. Što bliže 1, to su tekstovi sličniji.
+
+Kompletan flow
+┌────────────────────────────────────────────────────────────┐
+│ FAZA 1 — INDEXING (kad se kreira pitanje)                  │
+└────────────────────────────────────────────────────────────┘
+
+[AI processor generiše Q&A]
+        │
+        ▼
+[Za svako pitanje]:
+   text = "{pitanje} {odgovor}"
+        │
+        ▼
+[Bedrock Titan Embeddings invoke]
+   amazon.titan-embed-text-v2:0
+        │
+        ▼
+[1024-dim vektor]
+        │
+        ▼
+[Snimanje u QUESTION item u DynamoDB]
+   question.embedding = [0.12, -0.45, ...]
+
+
+┌────────────────────────────────────────────────────────────┐
+│ FAZA 2 — QUERY (kad student pretraži)                      │
+└────────────────────────────────────────────────────────────┘
+
+[Student kuca: "kako da zaustavim rekurziju"]
+        │
+        ▼
+[Lambda: searchSemantic]
+        │
+        ├─→ [Bedrock Titan invoke]
+        │   query embedding: [0.13, -0.41, ...]
+        │
+        ├─→ [DDB query: sva pitanja za predmet]
+        │   (GSI po predmetu)
+        │
+        └─→ [Cosine similarity u Pythonu]
+            Sortiraj pitanja po sličnosti
+        │
+        ▼
+[Vrati top 10]
+   sa "score" za svako (npr. 0.87)
+Konkretan primer
+Postojeća pitanja u bazi (sa embeddings):
+
+"Šta je bazni slučaj rekurzije?"
+"Objasnite stack overflow"
+"Kako se piše for petlja?"
+"Šta su parametri funkcije?"
+Student kuca: "kako da rekurzija ne pukne"
+
+Šta tagovi rade (trenutno): Traži tag pukne, kako → ne nalazi ništa relevantno.
+
+Šta semantic radi:
+
+Query embedding: [0.14, -0.47, ...]
+Compare sa svim pitanjima:
+Pitanje 1: similarity = 0.91 ← najsličnije
+Pitanje 2: similarity = 0.78
+Pitanje 3: similarity = 0.21
+Pitanje 4: similarity = 0.34
+Sortiraj → vrati #1, #2, #4, #3
+Student dobije odgovor na pitanje koje je zapravo tražio, iako nije znao tačnu terminologiju.
+
+2. Tehnička implementacija
+2.1 Modifikacija AI processor-a
+backend/lambdas/ai/processor.py se proširuje:
+
+python
+import boto3
+import json
+
+bedrock = boto3.client("bedrock-runtime", region_name="eu-central-1")
+TITAN_MODEL_ID = "amazon.titan-embed-text-v2:0"
+
+def generate_embedding(text: str) -> list[float]:
+    """Generate 1024-dim embedding using Titan v2."""
+    response = bedrock.invoke_model(
+        modelId=TITAN_MODEL_ID,
+        body=json.dumps({
+            "inputText": text[:8000],  # max 8K karaktera
+            "dimensions": 1024,
+            "normalize": True  # već normalizovano za cosine
+        })
+    )
+    body = json.loads(response["body"].read())
+    return body["embedding"]
+
+
+# U postojećem processor-u, kad pravimo QUESTION items:
+def write_results(termin_id, result):
+    for q in result["questions"]:
+        # Generiši embedding za "pitanje + odgovor"
+        text = f"{q['pitanje']} {q['odgovor']}"
+        embedding = generate_embedding(text)
+        
+        # Snimi u DDB
+        table.put_item(Item={
+            "PK": f"TERMIN#{termin_id}",
+            "SK": f"QUESTION#{question_id}",
+            "type": "QUESTION",
+            "pitanje": q["pitanje"],
+            "odgovor": q["odgovor"],
+            "tagovi": q["tagovi"],
+            "embedding": embedding,  # ← NOVO
+            # ... ostala polja
+        })
+Cost po pitanju: 1 Titan invoke = $0.00002 (gotovo besplatno).
+
+2.2 Nova Lambda: searchSemantic
+backend/lambdas/search/semantic.py:
+
+python
+import numpy as np
+from boto3.dynamodb.conditions import Key
+from shared.response import api_handler, success_response
+from shared.bedrock_client import generate_embedding
+from shared.logger import logger
+from shared.ddb_client import table
+
+@api_handler
+def handler(event, context):
+    predmet = event["queryStringParameters"]["predmet"]
+    query = event["queryStringParameters"]["q"]
+    limit = int(event["queryStringParameters"].get("limit", 10))
+    
+    if len(query) < 3:
+        return success_response(200, {"results": []})
+    
+    logger.info("Semantic search started", extra={"predmet": predmet, "queryLen": len(query)})
+    
+    # 1. Generiši embedding za query
+    query_emb = np.array(generate_embedding(query))
+    
+    # 2. Pull sva pitanja za predmet (samo approved)
+    response = table.query(
+        IndexName="GSI5",  # nov GSI: pitanja po predmetu
+        KeyConditionExpression=Key("GSI5PK").eq(f"PREDMET#{predmet}#APPROVED"),
+        ProjectionExpression="questionId, pitanje, odgovor, tagovi, embedding, terminId, profesorIme"
+    )
+    questions = response.get("Items", [])
+    
+    if not questions:
+        return success_response(200, {"results": []})
+    
+    # 3. Compute cosine similarity
+    # (Titan je već normalizovan, pa je dot product = cosine similarity)
+    embeddings = np.array([q["embedding"] for q in questions])
+    scores = np.dot(embeddings, query_emb)
+    
+    # 4. Sortiraj i top-K
+    top_indices = np.argsort(scores)[::-1][:limit]
+    
+    results = []
+    for idx in top_indices:
+        score = float(scores[idx])
+        if score < 0.5:  # threshold za "relevantno"
+            continue
+        q = questions[idx]
+        q.pop("embedding")  # ne treba u response-u
+        q["score"] = round(score, 3)
+        results.append(q)
+    
+    logger.info("Semantic search complete", extra={
+        "totalScanned": len(questions),
+        "returned": len(results)
+    })
+    
+    return success_response(200, {"results": results})
+2.3 Novi GSI za "approved questions po predmetu"
+GSI5:
+  GSI5PK: PREDMET#{predmet}#APPROVED
+  GSI5SK: QUESTION#{questionId}
+Dodaje se na QUESTION item-u tek kada profesor klikne approve. Ako se ne aprovira, item nema GSI5 ključ → ne vraća se u pretrazi.
+
+2.4 Hibridna pretraga (preporučujem)
+Najbolja praksa: kombinuj tagove (egzaktni match) i semantic (značenje). Ne biraj jedno ili drugo.
+
+python
+@api_handler
+def handler(event, context):
+    query = ...
+    
+    # Paralelno
+    tag_results = search_by_tags(query, predmet)        # postojeća logika
+    semantic_results = search_by_embedding(query, predmet)  # nova
+    
+    # Reciprocal Rank Fusion (RRF) — kombinuj rangiranja
+    combined = rrf_merge(tag_results, semantic_results)
+    
+    return success_response(200, {"results": combined[:10]})
+Zašto hibridno:
+
+Tagovi su brži i deterministički — ako student kuca tačno "rekurzija", idemo direktno
+Semantic hvata sinonime, parafraze, opisne upite
+RRF blend daje robustne rezultate
+3. AI follow-up chat — kako se nadograđuje
+3.1 Flow
+[Student vidi 10 Q&A iz semantic search-a]
+   │
+   "Nije ti odgovorilo? Pitaj AI tutora →"
+   │
+   ▼
+[Chat box otvara]
+   │
+   Student: "ali ja ne razumem zašto stack ima limit"
+   │
+   ▼
+[Lambda: aiTutorAsk]
+   │
+   ├─→ Pull materijal iz S3 (extracted text PDF-a)
+   ├─→ Pull top-5 najsličnijih pitanja (semantic search)
+   ├─→ Pull tag dictionary za predmet
+   │
+   ▼
+[Bedrock Claude Haiku invoke]
+   System: "Ti si pomoćni tutor za {predmet}..."
+   Context: [materijal text + 5 sličnih Q&A]
+   Question: "ali ja ne razumem zašto stack..."
+   │
+   ▼
+[Output:]
+   {
+     "odgovor": "Stack ima limit jer...",
+     "confidence": "high" | "medium" | "low",
+     "sources": ["question-id-1", "question-id-3"],
+     "preporukaZakazivanja": false
+   }
+   │
+   ▼
+[Frontend prikazuje]
+   - Odgovor
+   - "Bazirano na pitanjima: [linkovi]"
+   - Ako confidence=low: "Razmotri zakazivanje konsultacija →"
+3.2 Zašto AI follow-up "samo radi" sa semantic search-om
+Bez semantic search-a: Morao bi da pošalješ sva pitanja predmeta kao kontekst Claude-u → skupo, presporo.
+
+Sa semantic search-om: Pošalješ samo top-5 najrelevantnijih → kontekst kratak, odgovor brz, cena niska.
+
+python
+@api_handler
+def handler(event, context):
+    student_id = get_user_id(event)
+    body = json.loads(event["body"])
+    question = body["question"]
+    termin_id = body.get("terminId")  # opciono — scope chat na termin
+    predmet = body.get("predmet")     # ili na predmet
+    
+    # 1. Semantic search da nađemo najrelevantnija pitanja
+    relevant_qa = semantic_search(question, predmet, limit=5)
+    
+    # 2. Pull material text ako je u kontekstu termina
+    material_text = None
+    if termin_id:
+        material_text = s3.get_object(
+            Bucket=MATERIALS_BUCKET,
+            Key=f"materials/{termin_id}/extracted.txt"
+        )["Body"].read().decode("utf-8")[:10000]  # cap 10K chars
+    
+    # 3. Bedrock invoke
+    system = """
+    Ti si AI tutor za predmet {predmet}.
+    Odgovaraš na srpskom, jasno, sa primerima.
+    Ako si nesiguran, eksplicitno priznaj i preporuči konsultacije.
+    Vraćaš JSON.
+    """
+    
+    user_prompt = f"""
+    Student pita: "{question}"
+    
+    Relevantna pitanja iz baze:
+    {format_qa(relevant_qa)}
+    
+    {f'Materijal sa konsultacija:\\n{material_text[:5000]}' if material_text else ''}
+    
+    Odgovori u JSON formatu:
+    {{
+      "odgovor": "...",
+      "confidence": "high" | "medium" | "low",
+      "sources": [questionId-i koji su bili korisni],
+      "preporukaZakazivanja": true ako je problem kompleksan
+    }}
+    """
+    
+    response = bedrock_invoke_claude(system, user_prompt)
+    
+    # 4. Snimi u istoriju (za rezime kasnije)
+    table.put_item(Item={
+        "PK": f"AICHAT#{predmet}",
+        "SK": f"{datetime.utcnow().isoformat()}#{student_id}",
+        "type": "AI_CHAT",
+        "studentId": student_id,
+        "question": question,
+        "answer": response["odgovor"],
+        "confidence": response["confidence"],
+        "terminId": termin_id,
+        "predmet": predmet,
+        "createdAt": now_iso()
+    })
+    
+    return success_response(200, response)
+3.3 Bonus: chat istorija u rezime profesora
+U V2 rezime feature, dodaj sekciju:
+
+"AI tutor je dobio 47 pitanja za ovaj predmet u poslednjih 7 dana. Top 3 teme: rekurzija (15), stack memorija (8), bazni slučaj (6)."
+
+Profesor zna šta studente realno muči mimo formalnog feedback-a.
+
+4. 💰 Cena — detaljan obračun
+4.1 Pricing brojke (Bedrock, eu-central-1, jun 2026)
+Model	Input	Output
+Titan Embeddings v2	$0.00002 / 1K tokena	(samo embedding, nema output)
+Claude Haiku 4.5	$0.001 / 1K tokena	$0.005 / 1K tokena
+Token cheat sheet:
+
+1 srpska reč ≈ 2-3 tokena
+1 pitanje + odgovor (~150 reči) ≈ 400 tokena
+1 PDF stranica ≈ 500 tokena
+4.2 Indexing cena (jednokratno po pitanju)
+1 pitanje + odgovor = ~400 tokena
+Titan invoke: 400 tokena × $0.00002 / 1000 = $0.000008
+
+Kad se aktivira: pri kreiranju Q&A (jednom)
+Za 100 termina × 10 pitanja = 1000 pitanja: $0.008 (manje od jednog centa, jednokratno)
+
+4.3 Search cena (po query-ju)
+Korak 1 — Embedding query-ja:
+  Tipičan query ~10 reči = 25 tokena
+  Cost: 25 × $0.00002 / 1000 = $0.0000005
+
+Korak 2 — DDB query: $0 (manjе od free tier-a za bilo koji realan volumen)
+
+Korak 3 — Cosine similarity u Pythonu: $0
+  (deo Lambda compute-a, već platen)
+
+UKUPNO PO SEARCH-U: ~$0.0000005 = praktično besplatno
+1000 pretraga mesečno: $0.0005 (pola centa)
+
+4.4 AI follow-up chat cena (po pitanju)
+Input:
+  System prompt: ~150 tokena
+  5 Q&A iz baze: ~2,000 tokena
+  Material excerpt (opciono): ~3,000 tokena
+  Studentsko pitanje: ~50 tokena
+  ─────────────────
+  Total input: ~5,200 tokena
+  Cost: 5,200 × $0.001 / 1000 = $0.0052
+
+Output:
+  Odgovor + JSON: ~400 tokena
+  Cost: 400 × $0.005 / 1000 = $0.002
+
+Embedding query (za internal search): ~$0.0000005
+
+UKUPNO PO PITANJU: ~$0.007
+4.5 Mesečna procena za realne scenarije
+Scenario A — Mali fakultetski projekat
+10 profesora × 5 termina/mesec = 50 termina
+50 termina × 10 pitanja = 500 nova pitanja
+30 studenata × 20 pretraga/mesec = 600 pretraga
+30 studenata × 5 AI pitanja/mesec = 150 AI chat pitanja
+Stavka	Cena
+Indexing (500 × $0.000008)	$0.004
+Pretraga (600 × $0.0000005)	$0.0003
+AI chat (150 × $0.007)	$1.05
+DDB extra storage (embeddings)	~$0.10
+Lambda invocations	~$0.05
+UKUPNO MESEČNO	~$1.20
+Scenario B — Srednji projekat
+30 profesora × 10 termina = 300 termina/mesec
+200 studenata × 50 pretraga = 10,000 pretraga
+200 studenata × 20 AI pitanja = 4,000 AI chat pitanja
+Stavka	Cena
+Indexing (3,000 × $0.000008)	$0.024
+Pretraga (10,000 × $0.0000005)	$0.005
+AI chat (4,000 × $0.007)	$28
+DDB storage	~$1
+Lambda	~$0.50
+UKUPNO MESEČNO	~$30
+Scenario C — Heavy abuse / popularan
+1,000 studenata × 100 AI pitanja = 100,000 AI chat pitanja
+Stavka	Cena
+AI chat (100,000 × $0.007)	$700
+⚠️ Ovde dolazi do "AI chat cost runaway" — vidi sekciju 5.
+
+4.6 Vizuelno: ko troši šta
+┌──────────────────────────────────────────────────┐
+│  Semantic search:    █ (1% trošk)                │
+│  Indexing:           ▏ (manje od 1%)             │
+│  AI chat:            ████████████████████ (95%)  │
+│  Lambda + DDB:       █▌ (4%)                     │
+└──────────────────────────────────────────────────┘
+Glavni troškovni driver = AI chat. Semantic search je praktično besplatan.
+
+5. 🛡️ Cost protection (OBAVEZNO)
+Bez ovih, AI chat može da te udari na neočekivanu fakturu.
+
+5.1 Rate limiting po studentu
+python
+# Pri svakom AI chat pozivu
+def check_rate_limit(student_id: str):
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    
+    response = table.update_item(
+        Key={"PK": f"RATELIMIT#{student_id}", "SK": f"AICHAT#{today}"},
+        UpdateExpression="ADD #c :one SET #ttl = :ttl",
+        ExpressionAttributeNames={"#c": "count", "#ttl": "ttl"},
+        ExpressionAttributeValues={
+            ":one": 1,
+            ":ttl": int((datetime.utcnow() + timedelta(days=2)).timestamp())
+        },
+        ReturnValues="UPDATED_NEW"
+    )
+    count = response["Attributes"]["count"]
+    
+    if count > 20:  # max 20 AI pitanja po danu
+        raise RateLimitError("Dnevni limit AI pitanja je 20. Pokušajte sutra ili zakažite konsultacije.")
+Bonus: TTL atribut briše rate limit item posle 2 dana automatski. Bez cron-a.
+
+5.2 Token cap u Bedrock pozivu
+python
+# Eksplicitan max_tokens
+response = bedrock.invoke_model(
+    body=json.dumps({
+        "max_tokens": 600,  # ne više od 600 output tokena
+        # ...
+    })
+)
+5.3 Input length validation
+python
+if len(question) > 500:
+    raise ValidationError("Pitanje je predugačko (max 500 karaktera)")
+
+if len(question) < 10:
+    raise ValidationError("Pitanje je prekratko")
+5.4 AWS Budget alarm (već postoji u CDK)
+Postojeći $5/mesec alarm je dovoljan. Ako udari → email → ti odlučuješ.
+
+5.5 Caching (opciono, naprednije)
+Ako student pita istu stvar dva puta, zašto da pozivaš Bedrock ponovo?
+
+python
+# Hash query → ako postoji u cache-u (DDB), vrati cache
+query_hash = hashlib.sha256(question.lower().encode()).hexdigest()[:16]
+cached = table.get_item(Key={"PK": f"AICACHE#{predmet}", "SK": query_hash})
+if cached.get("Item"):
+    return success_response(200, cached["Item"]["response"])
+
+# ... else invoke Bedrock and cache for 7 days
+Šteda: 30-50% AI poziva u praksi (česta su slična pitanja).
+
+6. Plan implementacije
+Korak 1 — Embeddings infrastructure (1 dan)
+ Modifikuj processor.py da generiše embedding za svako pitanje
+ Dodaj embedding polje u QUESTION item
+ Dodaj GSI5 (PREDMET#{predmet}#APPROVED)
+ Modifikuj approveQuestion Lambda da setuje GSI5 ključeve
+Korak 2 — Semantic search Lambda (1 dan)
+ backend/lambdas/search/semantic.py
+ numpy u shared layer-u (ako već nije)
+ Endpoint GET /search/semantic?predmet=X&q=...
+ Hibridna pretraga sa postojećom tag-based (RRF)
+Korak 3 — Frontend integracija search-a (1 dan)
+ Search bar zove novi endpoint
+ Prikaz "score" (opciono) — "95% match"
+ A/B toggle: "Pretraga: Semantic / Tagovi" za debugging
+Korak 4 — Backfill embeddings za postojeća pitanja (1h)
+ Script scripts/backfill_embeddings.py
+ Ide kroz sve QUESTION items, generiše embedding ako fali
+ Pokreni jednom
+Korak 5 — AI follow-up chat backend (2 dana)
+ Lambda aiTutorAsk — POST /ai/ask
+ Pull materijal text iz S3 (treba ga čuvati pri AI processing-u)
+ Bedrock prompt sa kontekstom
+ Rate limiting Lambda
+ Snimanje istorije u DDB
+Korak 6 — AI chat frontend (1 dan)
+ Chat UI komponenta (input + lista poruka)
+ Loading state, error handling
+ Linkovi na "source" pitanja
+ Auto-link "Zakaži konsultacije" ako confidence=low
+Korak 7 — Cost protection (0.5 dana)
+ Rate limit per-student
+ Cache za česta pitanja (opciono)
+ CloudWatch metric: AI tokens consumed
+ Alarm: > X tokens po danu
+Ukupno: ~7 dana solo developer.
+
+7. ⚖️ Trade-offs — šta da znaš
+Prednosti
+✅ Velik UX skok. Studenti pitaju prirodnim jezikom. ✅ Jeftino za normalan volumen. Pod $5/mesec za fakultetski projekat. ✅ Reusable infrastructure. Embeddings se koriste i za "Slična pitanja" (#3), "Personalized path" (#9), itd. ✅ Demo-friendly. Pokazuje pravo razumevanje AI-a.
+
+Mane
+⚠️ Naivni semantic search radi do ~10K pitanja po predmetu. Posle, scan kroz DDB postaje spor (>1s). Tada:
+
+Migracija na Aurora Serverless v2 + pgvector ($30+/mesec)
+ili OpenSearch Serverless ($25/mesec base)
+Ali za V1/V2 projekat nećeš ni blizu doći do 10K pitanja po predmetu.
+
+⚠️ AI chat može halucinati. Mitigacija:
+
+Eksplicitno tražiš confidence field
+Material kao kontekst (RAG)
+Discplay disclaimer u UI: "Odgovor generisan AI-em. Za precizne odgovore, zakaži konsultacije."
+⚠️ Cold start. Prvi semantic search posle pause traje 2-3s. Posle je sub-second. Acceptable.
+
+⚠️ Privacy. Studentska pitanja se logiraju (za rezime). Treba da bude jasno u UI da AI chat nije anoniman. Ili — anonimiziraj pri snimanju (samo question, ne studentId).
+
+8. 🎯 Final preporuka
+Implementacioni redosled (ako ideš oboje):
+Embeddings + semantic search prvo (Korak 1-3)
+Odmah dobijaš jak boost UX-a
+Praktično besplatno
+Reverzibilno (možeš da isključiš ako ne valja)
+AI follow-up chat drugo (Korak 5-6)
+Build na već postojećem temelju
+Najveći cool faktor
+Veći rizik od cost-a → zato cost protection (Korak 7) obavezno
+Realna mesečna cena za tvoj projekat:
+~$1-3/mesec za normalan studentski/fakultetski volumen sa 30-100 aktivnih studenata.
+
+Ako udariš $5 budžet alarm → znači da je projekat postao popularan, i tada razmišljaš o platnom modelu ili dodatnom cost-control-u.
+
+Demo-strategy:
+Kad pokazuješ projekat na odbrani:
+
+Demo semantic search sa namerno "loše formulisanim" upitom — "kako ne da pukne stack u rekurziji" — i pokaži da pronađe pravo pitanje
+Demo AI chat sa specifičnim follow-up-om koji nije u 10 originalnih pitanja
+Pokaži cost — "ovo košta $2/mesec, evo CloudWatch dashboard"
+To impresionira komisiju jer pokazuje da razumeš i tehnologiju i ekonomiju AI sistema.
+
+Hoćeš da ti razradim konkretne Bedrock prompt-ove za AI chat + CDK izmene za GSI5 i Reports stack + frontend chat komponente? Mogu da ti pripremim sve to kao fajl-by-fajl plan da možeš odmah da kreneš sa implementacijom.
+
+You said: Napravi implementation_v3.
+
+CURRENT_STATE.md
+369 lines
+
+md
+
+Napravi implementation_v3.md fajl kao sto smo imali
+implementation_v2.md samo sad za ove nove feature-e
+
+2:53 PM
+Claude responded: Pre nego što krenem da pravim IMPLEMENTATIONPLANV3.
+Pre nego što krenem da pravim IMPLEMENTATION_PLAN_V3.md, da brzo potvrdim par stvari koje sam izveo iz prethodnog razgovora — javi ako nešto treba drugačije:
+
+Pretpostavke za V3 plan:
+
+Dva feature-a u V3:
+Semantic search (preko Titan Embeddings v2)
+AI follow-up chat (RAG nad materijalom + slična pitanja)
+Hibridna pretraga — kombinacija postojeće tag-based pretrage + semantic preko RRF (Reciprocal Rank Fusion). Postojeći GET /search/questions endpoint ostaje, samo dobija novu logiku iznutra (umesto pure tag matching).
+Embeddings storage — direktno u QUESTION DDB itemu (atribut embedding: list[float]). Bez OpenSearch / pgvector. Naivni cosine similarity u Python Lambdi.
+GSI5 — nov indeks PREDMET#{predmet}#APPROVED za pull-ovanje samo approved pitanja po predmetu (ako pitanje nije aprovirano, GSI5 ključevi se ne setuju → pitanje se ne pojavljuje u semantic search-u).
+Backfill — script za generisanje embeddings za postojeća V1/V2 pitanja koja su u bazi (ako ih ima posle deploy-a).
+AI chat:
+Endpoint POST /ai/ask
+Scope: po predmetu (opciono i po terminId)
+Cost protection: rate limit 20 pitanja po danu po studentu (TTL atribut za auto-cleanup)
+Snimanje istorije u DDB (za buduću analitiku, opciono u rezime)
+Disclaimer u UI: "Odgovor generisan AI-em"
+Materijal text za RAG — modifikacija aiProcessor da pri parsiranju PDF-a sačuva i raw extracted text u S3 (materials/{terminId}/extracted.txt). Bez ovoga AI chat nema materijal kontekst.
+Frontend — chat UI komponenta (input + list poruka), integracija sa PitajPreZakazivanja stranicom kao expandable sekcija ispod search rezultata.
+Deploy stage: V3 se gradi iznad V2 koji je već u kodu (čeka deploy). Plan pretpostavlja da je V2 već deployovan kad se V3 krene.
+Plan format — isti stil kao IMPLEMENTATION_PLAN_V2.md: arhitektura, DDB izmene, Lambda code skeletoni, prompt-ovi, plan po koracima, cost procena, edge cases checklist.
+Da li je nešto od ovoga pogrešno ili nedostaje? Konkretno me zanima:
+
+Da li hoćeš AI chat scope samo po predmetu, ili i opciju "globalni AI tutor" (svi predmeti)?
+Da li caching čestih pitanja ide u V3 (dodatna optimizacija), ili ostavljamo za kasnije?
+Da li hoćeš AI chat istoriju vidljivu studentu (kao chat thread koji se pamti), ili je svaka sesija fresh?
+Reci da li je ovo OK i odgovori na ova 3 pitanja, pa pravim plan. Ili ako kažeš "daj to što imaš, krenuću ja" — idem odmah sa default-ima (per-predmet scope, bez caching-a u V3, bez persistent chat istorije za studenta — istorija samo za internal analytics).
+
+You said: sve je tacno, hocu jos dodatno da mi napravis kada sve to radi finalni v4 koji je uredjivanje Frontend-a aplikacije
+sve je tacno, hocu jos dodatno da mi napravis kada sve to radi finalni v4 koji je uredjivanje Frontend-a aplikacije
+
+4:14 PM
+Claude responded: Razumem.
+Razumem. Pre nego što krenem da pravim oba fajla, treba mi par razjašnjenja za V4 frontend redesign — V3 mi je jasan, ali V4 ima previše opcija da bih ja samo pretpostavljao.
+
+Pitanja za V4 (frontend)
+1. Šta je zapravo obim V4?
+Reci mi koja od ovih opcija najbolje opisuje šta hoćeš:
+
+(a) Visual polish — postojeći layout, lepše ikone, bolje boje, animacije, mikro-interakcije, modern UI vibe (npr. shadcn/ui style)
+(b) UX redesign — drugačiji raspored stranica, novi navigation pattern, drugačiji flow-ovi
+(c) Komplet redesign sa design sistemom — design tokens, theme support (light/dark), component library, kompletno nov vizuelni identitet
+(d) Mobile-first overhaul — sve stranice optimizovane za mobile + responsive na desktop
+(e) Sve od navedenog
+Moja pretpostavka: (a) + (d) — vizuelni polish sa modernim UI library-jem + mobile-first responsive. Ovo je najpragmatičnije za fakultetski projekat, daje "wow" efekat na demo, ne menja postojeću logiku.
+
+Reci ako je drugačije.
+
+2. Design pravac — vizuelni identitet
+Koji "vibe" hoćeš za aplikaciju?
+
+(a) Akademski / serious — minimalistic, mnogo belog prostora, neutralne boje (siva/plava), tipografija u prvom planu (kao Notion, Linear)
+(b) Modern SaaS — dosta gradijenata, soft shadows, vivid akcenti (kao Vercel, Stripe)
+(c) Educational platform — toplije boje, friendly tipografija, ilustracije/emoji (kao Khan Academy, Duolingo)
+(d) Dark mode first — fokus na tamnu temu, retro-tech estetika
+(e) Imaš sopstvenu viziju (opiši)
+Moja preporuka: (a) akademski / serious — odgovara domenu (univerzitet), izgleda profesionalno, lakše se implementira, ne stari brzo.
+
+3. Component library
+Trenutno koristiš Tailwind + Radix + custom UI. Šta da bude osnova V4?
+
+(a) shadcn/ui — najpopularniji 2026, copy-paste komponente koje ti vlasništvo, dobar default izgled, gradi se na Radix-u koji već imaš
+(b) Ostani na Radix + custom, samo restyle Tailwind klase
+(c) Druga library (Mantine, Chakra, Material UI...)
+Preporuka: (a) shadcn/ui — već imaš Radix kao osnovu, prelazak je gladak, dobiješ moderne forme, modal-e, tabs, dropdown-e bez pisanja from scratch.
+
+4. Boje / tema
+(a) Hoćeš li dark mode toggle kao feature?
+(b) Da li imaš brand color za aplikaciju (npr. plava, zelena), ili izabereš ti?
+(c) Da li hoćeš logo / wordmark za "Konsultacije"? Ako da, da li već postoji ili ga praviš novo?
+Predlog: Light mode default + dark toggle, brand color ja predložim (akademska tamno-plava), wordmark u sans-serif fontu (npr. Inter ili Plus Jakarta Sans).
+
+5. Animacije i interakcije
+(a) Suptilne — fade in/out, hover state-ovi (industry standard)
+(b) Bogate — page transitions, scroll animations, micro-interactions (Framer Motion)
+(c) Bez — instant promene, čisto funkcionalno
+Preporuka: (a) suptilne. (b) je impressivno za demo ali ozbiljan trošak vremena i može da padne na mobile-u.
+
+6. Pojedinačne stranice — koje hoćeš da dobiju specijalan tretman?
+Sve stranice će dobiti polish, ali neke možda zaslužuju custom dizajn:
+
+Login/Register — split layout sa ilustracijom?
+Student dashboard — hero card sa "sledeća konsultacija", quick actions?
+Profesor dashboard — KPI kartice (X termina, Y rezervacija, Z čekajućih approval)?
+Pitaj pre zakazivanja — search-as-you-type sa rezultatima u real-time?
+AI chat (V3) — message bubbles, typing indicator, source citations?
+Rezime stranica (V2) — data-viz (charts), heatmaps?
+Predlog: Sve od navedenog dobija fokus, ali bez data-viz na rezime (overkill, koristi simple progress bar-ove i kartice).
+
+7. Onboarding / empty states
+Trenutno empty stanja verovatno deluju "kao da je bug". Hoćeš li V4 da uvede:
+
+Empty state ilustracije ("Nemaš još rezervacija — zakaži prvu!")
+Onboarding tutorial za nove korisnike (3-4 koraka)
+Tooltip-i pri prvom korišćenju
+Preporuka: Da, ali samo empty states + 1-2 ključna tooltip-a. Onboarding tutorial je overkill za fakultetski projekat.
+
+8. Šta NE menjamo
+Da bih te pitao šta da ne diram:
+
+Postojeći routing struktura (URL-ovi) ostaje, da?
+Postojeći API kontrakti ostaju, da?
+React Query + axios ostaju, da?
+Plan ne menja backend uopšte, da?
+9. Plan format
+Treba mi i potvrda formata:
+
+(a) Isti stil kao V2/V3 — markdown sa sekcijama, kod-snippets, plan po koracima
+(b) Plus wireframe / ASCII mock-up-ovi za ključne stranice
+(c) Plus konkretne color palete sa hex codes i typography scale
+(d) Plus dependency lista (sve nove npm pakete koje treba instalirati)
+(e) Plus before/after comparison za svaku stranicu
+Preporuka: sve od (a)-(e). Plan postaje dugačak (~30-40 strana) ali pokriva sve što ti treba da implementiraš samostalno ili sa AI agent-om.
+
+Sumarno — moje default-ne pretpostavke
+Ako kažeš "izaberi ti", evo šta pravim:
+
+V4 obim: Visual polish + mobile-first responsive
+Vibe: Akademski/serious (Notion/Linear style)
+Library: shadcn/ui
+Tema: Light default + dark toggle, akademska tamno-plava brand color
+Animacije: Suptilne (Tailwind transitions, par strategic Framer Motion za key state changes)
+Special pages: Login split layout, dashboard hero/KPI kartice, AI chat lepe message bubbles, search real-time, rezime sa progress bars
+Empty states: Da, sa kratkim tekstom + jednim CTA
+Ne menjamo: routing, API, state management, backend
+Plan format: Markdown sa wireframe-ovima, hex codes, dependencies, before/after
+Šta ja sad pravim
+Krećem da pravim:
+
+IMPLEMENTATION_PLAN_V3.md — semantic search + AI follow-up chat (već imamo svu razradu iz prošle poruke)
+IMPLEMENTATION_PLAN_V4.md — frontend redesign
+Pitanje za tebe:
+
+Hoćeš da krenem sa default-nim pretpostavkama koje sam izneo (preporuke za sve 9 tačaka) i odmah ti dam oba fajla, ili hoćeš prvo da odgovoriš na pitanja koja su za tebe najbitnija (npr. samo #1, #2, #6 — ostalo prepuštaš meni)?
+
+Reci samo:
+
+"Default sve, krenuće" → idem odmah
+"Default ali izmenim X, Y" → reci izmene
+"Daj mi prvo da odgovorim na sve" → čekam tvoje odgovore
+
+moji odgovori
+1. C
+
+2. B
+
+3. A
+
+4. Moze neka varijanta prljavo bele kao beige
+
+5. A
+
+6. SVE
+
+7. samo za ai features
+
+8. Slazem se
+
+9. ODLICNO

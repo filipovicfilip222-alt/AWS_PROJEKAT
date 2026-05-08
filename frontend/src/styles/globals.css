@@ -1,0 +1,236 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* V4 v2.0 beige base */
+    --background: 37 45% 94%;
+    --foreground: 215 28% 17%;
+    --card: 40 100% 98%;
+    --card-foreground: 215 28% 17%;
+    --popover: 40 100% 98%;
+    --popover-foreground: 215 28% 17%;
+    --secondary: 36 38% 90%;
+    --secondary-foreground: 215 28% 17%;
+    --muted: 36 38% 90%;
+    --muted-foreground: 220 9% 46%;
+    --border: 35 31% 84%;
+    --input: 35 31% 84%;
+
+    /* Brand */
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+    --ring: 243 75% 58%;
+
+    /* AI accent (violet) */
+    --accent: 262 90% 66%;
+    --accent-foreground: 0 0% 100%;
+    --accent-muted: 252 100% 97%;
+
+    /* Semantic */
+    --destructive: 0 84% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 32 95% 44%;
+    --warning-foreground: 0 0% 100%;
+    --info: 199 98% 40%;
+    --info-foreground: 0 0% 100%;
+
+    /* AI bubbles */
+    --ai-bubble-bg: 252 100% 97%;
+    --ai-bubble-fg: 215 28% 17%;
+    --ai-bubble-border: 252 80% 90%;
+    --user-bubble-bg: 40 100% 98%;
+    --user-bubble-fg: 215 28% 17%;
+    --user-bubble-border: 35 31% 84%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 222 30% 9%;
+    --foreground: 36 38% 92%;
+    --card: 222 30% 12%;
+    --card-foreground: 36 38% 92%;
+    --popover: 222 30% 12%;
+    --popover-foreground: 36 38% 92%;
+    --secondary: 222 30% 18%;
+    --secondary-foreground: 36 38% 92%;
+    --muted: 222 30% 18%;
+    --muted-foreground: 220 9% 65%;
+    --border: 222 30% 22%;
+    --input: 222 30% 22%;
+
+    --primary: 217 91% 65%;
+    --primary-foreground: 222 30% 9%;
+    --ring: 243 75% 60%;
+
+    --accent: 262 70% 60%;
+    --accent-foreground: 0 0% 100%;
+    --accent-muted: 252 30% 18%;
+
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 60% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 32 85% 55%;
+    --warning-foreground: 0 0% 100%;
+    --info: 199 80% 55%;
+    --info-foreground: 0 0% 100%;
+
+    --ai-bubble-bg: 252 30% 18%;
+    --ai-bubble-fg: 36 38% 92%;
+    --ai-bubble-border: 252 30% 30%;
+    --user-bubble-bg: 222 30% 12%;
+    --user-bubble-fg: 36 38% 92%;
+    --user-bubble-border: 222 30% 22%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Geist", "Inter", system-ui, -apple-system, "Segoe UI", Roboto,
+      Oxygen, Ubuntu, Cantarell, sans-serif;
+    /* Geist-specific character variants. Avoid stylistic sets like ss01
+       because they would also activate swashy alternates in Fraunces
+       (which inherits font-feature-settings via the global cascade). */
+    font-feature-settings:
+      "cv01",
+      "cv11";
+    font-optical-sizing: auto;
+  }
+
+  /* All headings: Fraunces serif, regular-medium weight, normal style.
+     Per-level font-variation-settings tune optical size / softness. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Fraunces", "Source Serif Pro", Georgia, "Times New Roman",
+      serif;
+    font-weight: 500;
+    font-style: normal;
+    letter-spacing: -0.012em;
+    /* Disable any inherited stylistic sets that would activate swashes. */
+    font-feature-settings: normal;
+    font-variation-settings:
+      "opsz" 96,
+      "SOFT" 50,
+      "WONK" 0;
+  }
+  h1 {
+    font-variation-settings:
+      "opsz" 144,
+      "SOFT" 50,
+      "WONK" 0;
+  }
+  h2 {
+    font-variation-settings:
+      "opsz" 96,
+      "SOFT" 40,
+      "WONK" 0;
+  }
+  h3 {
+    font-variation-settings:
+      "opsz" 48,
+      "SOFT" 30,
+      "WONK" 0;
+  }
+  h4,
+  h5,
+  h6 {
+    font-variation-settings:
+      "opsz" 24,
+      "SOFT" 20,
+      "WONK" 0;
+  }
+
+  /* Display utility: cleaner Fraunces (no swash, optical-display size).
+     Use for hero/page-level titles. */
+  .font-display {
+    font-family: "Fraunces", "Source Serif Pro", Georgia, "Times New Roman",
+      serif;
+    font-style: normal;
+    letter-spacing: -0.005em;
+    font-feature-settings: normal;
+    font-variation-settings:
+      "opsz" 144,
+      "SOFT" 50,
+      "WONK" 0;
+  }
+
+  /* Hero card titles and other "smaller display" text. Less decorative. */
+  .font-display-soft {
+    font-family: "Fraunces", "Source Serif Pro", Georgia, "Times New Roman",
+      serif;
+    font-style: normal;
+    letter-spacing: -0.008em;
+    font-feature-settings: normal;
+    font-variation-settings:
+      "opsz" 96,
+      "SOFT" 30,
+      "WONK" 0;
+  }
+
+  /* Clean italic Fraunces — used for nav featured ("PitajPreZakazivanja").
+     No swash, no wonk, optimized for small inline labels. */
+  .font-display-italic-clean {
+    font-family: "Fraunces", "Source Serif Pro", Georgia, "Times New Roman",
+      serif;
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: 0;
+    font-feature-settings: normal;
+    font-variation-settings:
+      "opsz" 24,
+      "SOFT" 0,
+      "WONK" 0;
+  }
+
+  /* Display italic for big page titles. Mildly soft, no wonk. */
+  .font-display-italic {
+    font-family: "Fraunces", "Source Serif Pro", Georgia, "Times New Roman",
+      serif;
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: -0.005em;
+    font-feature-settings: normal;
+    font-variation-settings:
+      "opsz" 96,
+      "SOFT" 30,
+      "WONK" 0;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .gradient-mask-b {
+    -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent);
+    mask-image: linear-gradient(to bottom, black 60%, transparent);
+  }
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.4) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.4) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  .bg-dots {
+    background-image: radial-gradient(hsl(var(--border)) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+}
